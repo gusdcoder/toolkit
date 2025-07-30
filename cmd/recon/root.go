@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -30,7 +30,7 @@ Features:
 • Horizontal and vertical reconnaissance capabilities
 • Real-time dashboards and comprehensive reporting
 
-For detailed documentation, visit: https://github.com/recon-platform/core`,
+For detailed documentation, visit: https://toolkit/`,
 	Version: "0.1.0",
 }
 
@@ -41,15 +41,15 @@ func Execute() error {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	
+
 	// Global flags
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", 
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "",
 		"config file (default is $HOME/.recon-platform/config.yaml)")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, 
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false,
 		"verbose output")
-	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, 
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false,
 		"debug output")
-	
+
 	// Bind flags to viper
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
 	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
@@ -64,26 +64,26 @@ func initConfig() {
 		// Find home directory.
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
-		
+
 		configDir := filepath.Join(home, ".recon-platform")
-		
+
 		// Create config directory if it doesn't exist
 		if err := os.MkdirAll(configDir, 0755); err != nil {
 			fmt.Printf("Warning: Failed to create config directory: %v\n", err)
 		}
-		
+
 		// Search config in home directory with name "config" (without extension).
 		viper.AddConfigPath(configDir)
 		viper.SetConfigType("yaml")
 		viper.SetConfigName("config")
 	}
-	
+
 	viper.SetEnvPrefix("RECON")
 	viper.AutomaticEnv() // read in environment variables that match
-	
+
 	// Set default values
 	setDefaults()
-	
+
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil && viper.GetBool("verbose") {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
@@ -99,13 +99,13 @@ func setDefaults() {
 	viper.SetDefault("database.password", "")
 	viper.SetDefault("database.dbname", "recon")
 	viper.SetDefault("database.sslmode", "disable")
-	
+
 	// Scanning defaults
 	viper.SetDefault("scan.threads", 50)
 	viper.SetDefault("scan.timeout", 30)
 	viper.SetDefault("scan.rate_limit", 1000)
 	viper.SetDefault("scan.retries", 3)
-	
+
 	// Tool defaults
 	viper.SetDefault("tools.nmap.path", "nmap")
 	viper.SetDefault("tools.nuclei.path", "nuclei")
@@ -113,7 +113,7 @@ func setDefaults() {
 	viper.SetDefault("tools.naabu.path", "naabu")
 	viper.SetDefault("tools.httpx.path", "httpx")
 	viper.SetDefault("tools.katana.path", "katana")
-	
+
 	// Output defaults
 	viper.SetDefault("output.format", "json")
 	viper.SetDefault("output.directory", "./output")

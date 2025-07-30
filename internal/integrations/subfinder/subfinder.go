@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/recon-platform/core/internal/database"
-	"github.com/recon-platform/core/pkg/models"
+	"toolkit/internal/database"
+	"toolkit/pkg/models"
 )
 
 // SubfinderIntegration handles subfinder tool integration
@@ -22,12 +22,12 @@ type SubfinderIntegration struct {
 
 // SubfinderConfig holds configuration for subfinder
 type SubfinderConfig struct {
-	Sources    []string // Sources to use (all, passive, active)
-	Threads    int      // Number of threads
-	Timeout    int      // Timeout in seconds
-	Silent     bool     // Silent mode
-	Recursive  bool     // Recursive enumeration
-	MaxDepth   int      // Maximum recursion depth
+	Sources   []string // Sources to use (all, passive, active)
+	Threads   int      // Number of threads
+	Timeout   int      // Timeout in seconds
+	Silent    bool     // Silent mode
+	Recursive bool     // Recursive enumeration
+	MaxDepth  int      // Maximum recursion depth
 }
 
 // SubfinderResult represents a single subdomain result
@@ -81,7 +81,7 @@ func (s *SubfinderIntegration) EnumerateSubdomains(domain string, config *Subfin
 	args := []string{
 		"-d", domain,
 		"-o", "-", // Output to stdout
-		"-json",   // JSON output for parsing
+		"-json", // JSON output for parsing
 	}
 
 	// Add configuration options
@@ -128,7 +128,7 @@ func (s *SubfinderIntegration) EnumerateSubdomains(domain string, config *Subfin
 	// Parse results
 	var results []SubfinderResult
 	scanner := bufio.NewScanner(stdout)
-	
+
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" {
@@ -142,9 +142,9 @@ func (s *SubfinderIntegration) EnumerateSubdomains(domain string, config *Subfin
 			Source:    "subfinder",
 			Timestamp: time.Now(),
 		}
-		
+
 		results = append(results, result)
-		
+
 		if s.verbose {
 			log.Printf("Found subdomain: %s", line)
 		}
@@ -229,7 +229,7 @@ func (s *SubfinderIntegration) GetStats() (map[string]interface{}, error) {
 	}
 
 	stats := map[string]interface{}{
-		"total_domains":     counts["domains"],
+		"total_domains":    counts["domains"],
 		"last_enumeration": time.Now(),
 		"tool":             "subfinder",
 	}

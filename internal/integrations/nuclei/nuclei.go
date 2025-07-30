@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/recon-platform/core/internal/database"
-	"github.com/recon-platform/core/pkg/models"
+	"toolkit/internal/database"
+	"toolkit/pkg/models"
 )
 
 // NucleiIntegration provides interface to Nuclei vulnerability scanner
@@ -23,72 +23,72 @@ type NucleiIntegration struct {
 
 // NucleiResult represents a single vulnerability finding
 type NucleiResult struct {
-	TemplateID   string            `json:"template-id"`
-	TemplatePath string            `json:"template-path"`
-	Info         NucleiInfo        `json:"info"`
-	Type         string            `json:"type"`
-	Host         string            `json:"host"`
-	Port         string            `json:"port"`
-	Scheme       string            `json:"scheme"`
-	URL          string            `json:"url"`
-	MatchedAt    string            `json:"matched-at"`
-	ExtractedResults []string      `json:"extracted-results,omitempty"`
-	Request      string            `json:"request,omitempty"`
-	Response     string            `json:"response,omitempty"`
-	IP           string            `json:"ip,omitempty"`
-	Timestamp    time.Time         `json:"timestamp"`
-	CURLCommand  string            `json:"curl-command,omitempty"`
+	TemplateID       string     `json:"template-id"`
+	TemplatePath     string     `json:"template-path"`
+	Info             NucleiInfo `json:"info"`
+	Type             string     `json:"type"`
+	Host             string     `json:"host"`
+	Port             string     `json:"port"`
+	Scheme           string     `json:"scheme"`
+	URL              string     `json:"url"`
+	MatchedAt        string     `json:"matched-at"`
+	ExtractedResults []string   `json:"extracted-results,omitempty"`
+	Request          string     `json:"request,omitempty"`
+	Response         string     `json:"response,omitempty"`
+	IP               string     `json:"ip,omitempty"`
+	Timestamp        time.Time  `json:"timestamp"`
+	CURLCommand      string     `json:"curl-command,omitempty"`
 }
 
 // NucleiInfo contains template metadata
 type NucleiInfo struct {
-	Name           string            `json:"name"`
-	Author         []string          `json:"author"`
-	Tags           []string          `json:"tags"`
-	Description    string            `json:"description"`
-	Reference      []string          `json:"reference,omitempty"`
-	Severity       string            `json:"severity"`
+	Name           string               `json:"name"`
+	Author         []string             `json:"author"`
+	Tags           []string             `json:"tags"`
+	Description    string               `json:"description"`
+	Reference      []string             `json:"reference,omitempty"`
+	Severity       string               `json:"severity"`
 	Classification NucleiClassification `json:"classification,omitempty"`
 }
 
 // NucleiClassification contains vulnerability classification info
 type NucleiClassification struct {
-	CVEID         []string `json:"cve-id,omitempty"`
-	CWEID         []string `json:"cwe-id,omitempty"`
-	CVSSMetrics   string   `json:"cvss-metrics,omitempty"`
-	CVSSScore     float64  `json:"cvss-score,omitempty"`
-	EPSSScore     float64  `json:"epss-score,omitempty"`
-	EPSSPercentile float64 `json:"epss-percentile,omitempty"`
+	CVEID          []string `json:"cve-id,omitempty"`
+	CWEID          []string `json:"cwe-id,omitempty"`
+	CVSSMetrics    string   `json:"cvss-metrics,omitempty"`
+	CVSSScore      float64  `json:"cvss-score,omitempty"`
+	EPSSScore      float64  `json:"epss-score,omitempty"`
+	EPSSPercentile float64  `json:"epss-percentile,omitempty"`
 }
 
 // NucleiConfig holds configuration for Nuclei scans
 type NucleiConfig struct {
-	Templates            []string
-	Tags                 []string
-	ExcludeTags          []string
-	Severity             []string
-	Threads              int
-	RateLimit            int
-	Timeout              int
-	Retries              int
-	BulkSize             int
-	TemplateTimeout      int
-	NoInteractsh         bool
-	DisableUpdateCheck   bool
-	FollowRedirects      bool
-	MaxRedirects         int
-	UserAgent            string
-	CustomHeaders        map[string]string
-	Proxy                string
-	ResolversFile        string
-	SkipHostErrorCheck   bool
-	SystemResolvers      bool
-	OfflineHTTP          bool
-	EnableProgressBar    bool
-	StatsJSON            bool
-	Silent               bool
-	Verbose              bool
-	Debug                bool
+	Templates          []string
+	Tags               []string
+	ExcludeTags        []string
+	Severity           []string
+	Threads            int
+	RateLimit          int
+	Timeout            int
+	Retries            int
+	BulkSize           int
+	TemplateTimeout    int
+	NoInteractsh       bool
+	DisableUpdateCheck bool
+	FollowRedirects    bool
+	MaxRedirects       int
+	UserAgent          string
+	CustomHeaders      map[string]string
+	Proxy              string
+	ResolversFile      string
+	SkipHostErrorCheck bool
+	SystemResolvers    bool
+	OfflineHTTP        bool
+	EnableProgressBar  bool
+	StatsJSON          bool
+	Silent             bool
+	Verbose            bool
+	Debug              bool
 }
 
 // NewNucleiIntegration creates a new Nuclei integration instance
@@ -130,23 +130,23 @@ func (n *NucleiIntegration) GetVersion() (string, error) {
 func (n *NucleiIntegration) ScanVulnerabilities(targets []string, config *NucleiConfig) ([]NucleiResult, error) {
 	if config == nil {
 		config = &NucleiConfig{
-			Severity:             []string{"critical", "high", "medium"},
-			Threads:              25,
-			RateLimit:            150,
-			Timeout:              5,
-			Retries:              1,
-			BulkSize:             25,
-			TemplateTimeout:      30,
-			NoInteractsh:         false,
-			DisableUpdateCheck:   true,
-			FollowRedirects:      true,
-			MaxRedirects:         3,
-			SkipHostErrorCheck:   true,
-			SystemResolvers:      true,
-			EnableProgressBar:    false,
-			StatsJSON:            false,
-			Silent:               true,
-			Verbose:              n.verbose,
+			Severity:           []string{"critical", "high", "medium"},
+			Threads:            25,
+			RateLimit:          150,
+			Timeout:            5,
+			Retries:            1,
+			BulkSize:           25,
+			TemplateTimeout:    30,
+			NoInteractsh:       false,
+			DisableUpdateCheck: true,
+			FollowRedirects:    true,
+			MaxRedirects:       3,
+			SkipHostErrorCheck: true,
+			SystemResolvers:    true,
+			EnableProgressBar:  false,
+			StatsJSON:          false,
+			Silent:             true,
+			Verbose:            n.verbose,
 		}
 	}
 
@@ -287,8 +287,8 @@ func (n *NucleiIntegration) ScanVulnerabilities(targets []string, config *Nuclei
 		}
 
 		// Skip stats and info lines
-		if strings.Contains(line, "[INF]") || strings.Contains(line, "[WRN]") || 
-		   strings.Contains(line, "[ERR]") || strings.Contains(line, "[DBG]") {
+		if strings.Contains(line, "[INF]") || strings.Contains(line, "[WRN]") ||
+			strings.Contains(line, "[ERR]") || strings.Contains(line, "[DBG]") {
 			continue
 		}
 
@@ -330,24 +330,24 @@ func (n *NucleiIntegration) RunFullVulnerabilityScan(targets []string) (int, err
 
 	// Configure scan for comprehensive coverage
 	config := &NucleiConfig{
-		Severity:             []string{"critical", "high", "medium", "low"},
-		Tags:                 []string{"cve", "oast", "default-logins", "misconfig", "exposed-panels"},
-		Threads:              25,
-		RateLimit:            150,
-		Timeout:              10,
-		Retries:              1,
-		BulkSize:             25,
-		TemplateTimeout:      30,
-		NoInteractsh:         false,
-		DisableUpdateCheck:   true,
-		FollowRedirects:      true,
-		MaxRedirects:         3,
-		SkipHostErrorCheck:   true,
-		SystemResolvers:      true,
-		EnableProgressBar:    false,
-		StatsJSON:            false,
-		Silent:               true,
-		Verbose:              n.verbose,
+		Severity:           []string{"critical", "high", "medium", "low"},
+		Tags:               []string{"cve", "oast", "default-logins", "misconfig", "exposed-panels"},
+		Threads:            25,
+		RateLimit:          150,
+		Timeout:            10,
+		Retries:            1,
+		BulkSize:           25,
+		TemplateTimeout:    30,
+		NoInteractsh:       false,
+		DisableUpdateCheck: true,
+		FollowRedirects:    true,
+		MaxRedirects:       3,
+		SkipHostErrorCheck: true,
+		SystemResolvers:    true,
+		EnableProgressBar:  false,
+		StatsJSON:          false,
+		Silent:             true,
+		Verbose:            n.verbose,
 	}
 
 	// Perform vulnerability scan
@@ -469,17 +469,17 @@ func (n *NucleiIntegration) RunFullVulnerabilityScan(targets []string) (int, err
 // ScanSpecificTemplates runs specific Nuclei templates
 func (n *NucleiIntegration) ScanSpecificTemplates(targets []string, templates []string) ([]NucleiResult, error) {
 	config := &NucleiConfig{
-		Templates:            templates,
-		Threads:              10,
-		RateLimit:            50,
-		Timeout:              10,
-		Retries:              1,
-		DisableUpdateCheck:   true,
-		FollowRedirects:      true,
-		SkipHostErrorCheck:   true,
-		SystemResolvers:      true,
-		Silent:               true,
-		Verbose:              n.verbose,
+		Templates:          templates,
+		Threads:            10,
+		RateLimit:          50,
+		Timeout:            10,
+		Retries:            1,
+		DisableUpdateCheck: true,
+		FollowRedirects:    true,
+		SkipHostErrorCheck: true,
+		SystemResolvers:    true,
+		Silent:             true,
+		Verbose:            n.verbose,
 	}
 
 	return n.ScanVulnerabilities(targets, config)
@@ -488,17 +488,17 @@ func (n *NucleiIntegration) ScanSpecificTemplates(targets []string, templates []
 // ScanBySeverity runs scans filtered by severity levels
 func (n *NucleiIntegration) ScanBySeverity(targets []string, severities []string) ([]NucleiResult, error) {
 	config := &NucleiConfig{
-		Severity:             severities,
-		Threads:              25,
-		RateLimit:            100,
-		Timeout:              10,
-		Retries:              1,
-		DisableUpdateCheck:   true,
-		FollowRedirects:      true,
-		SkipHostErrorCheck:   true,
-		SystemResolvers:      true,
-		Silent:               true,
-		Verbose:              n.verbose,
+		Severity:           severities,
+		Threads:            25,
+		RateLimit:          100,
+		Timeout:            10,
+		Retries:            1,
+		DisableUpdateCheck: true,
+		FollowRedirects:    true,
+		SkipHostErrorCheck: true,
+		SystemResolvers:    true,
+		Silent:             true,
+		Verbose:            n.verbose,
 	}
 
 	return n.ScanVulnerabilities(targets, config)

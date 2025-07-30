@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	
-	"github.com/recon-platform/core/cmd/recon"
+
+	"toolkit/cmd/recon"
 )
 
 func main() {

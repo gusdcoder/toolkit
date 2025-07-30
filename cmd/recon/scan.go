@@ -5,10 +5,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/recon-platform/core/internal/database"
-	"github.com/recon-platform/core/internal/pipeline"
-	uiscan "github.com/recon-platform/core/internal/ui/scan"
-	"github.com/recon-platform/core/internal/workspace"
+	"toolkit/internal/database"
+	"toolkit/internal/pipeline"
+	uiscan "toolkit/internal/ui/scan"
+	"toolkit/internal/workspace"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

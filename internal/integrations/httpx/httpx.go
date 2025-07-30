@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/recon-platform/core/internal/database"
-	"github.com/recon-platform/core/pkg/models"
+	"toolkit/internal/database"
+	"toolkit/pkg/models"
 )
 
 // HTTPXIntegration provides interface to HTTPX HTTP toolkit
@@ -23,31 +23,31 @@ type HTTPXIntegration struct {
 
 // HTTPXResult represents a single HTTP probe result
 type HTTPXResult struct {
-	URL           string            `json:"url"`
-	Input         string            `json:"input"`
-	Title         string            `json:"title"`
-	StatusCode    int               `json:"status_code"`
-	ContentLength int               `json:"content_length"`
-	ContentType   string            `json:"content_type"`
-	Location      string            `json:"location"`
-	Method        string            `json:"method"`
-	Webserver     string            `json:"webserver"`
-	TLS           bool              `json:"tls"`
-	Host          string            `json:"host"`
-	Port          int               `json:"port"`
-	Scheme        string            `json:"scheme"`
-	A             []string          `json:"a"`
-	CNAME         []string          `json:"cname"`
-	TechnologiesSlice []string      `json:"tech"`
-	Technologies  string            `json:"technologies"`
-	Headers       map[string]string `json:"header"`
-	ResponseTime  string            `json:"time"`
-	Words         int               `json:"words"`
-	Lines         int               `json:"lines"`
-	Failed        bool              `json:"failed"`
-	KnownService  string            `json:"knownservice,omitempty"`
-	Pipeline      string            `json:"pipeline,omitempty"`
-	Timestamp     time.Time         `json:"timestamp"`
+	URL               string            `json:"url"`
+	Input             string            `json:"input"`
+	Title             string            `json:"title"`
+	StatusCode        int               `json:"status_code"`
+	ContentLength     int               `json:"content_length"`
+	ContentType       string            `json:"content_type"`
+	Location          string            `json:"location"`
+	Method            string            `json:"method"`
+	Webserver         string            `json:"webserver"`
+	TLS               bool              `json:"tls"`
+	Host              string            `json:"host"`
+	Port              int               `json:"port"`
+	Scheme            string            `json:"scheme"`
+	A                 []string          `json:"a"`
+	CNAME             []string          `json:"cname"`
+	TechnologiesSlice []string          `json:"tech"`
+	Technologies      string            `json:"technologies"`
+	Headers           map[string]string `json:"header"`
+	ResponseTime      string            `json:"time"`
+	Words             int               `json:"words"`
+	Lines             int               `json:"lines"`
+	Failed            bool              `json:"failed"`
+	KnownService      string            `json:"knownservice,omitempty"`
+	Pipeline          string            `json:"pipeline,omitempty"`
+	Timestamp         time.Time         `json:"timestamp"`
 }
 
 // HTTPXConfig holds configuration for HTTPX probes
@@ -209,7 +209,7 @@ func (h *HTTPXIntegration) ProbeHTTP(targets []string, config *HTTPXConfig) ([]H
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "httpx", args...)
-	
+
 	// Feed targets through stdin
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -342,18 +342,18 @@ func (h *HTTPXIntegration) RunFullHTTPProbe(targets []string) (int, error) {
 		if result.TLS {
 			serviceName = "https"
 		}
-		
+
 		service := &models.Service{
-			HostID:      hostRecord.ID,
-			Host:        hostRecord,
-			Name:        serviceName,
-			Version:     result.Webserver,
-			Banner:      fmt.Sprintf("HTTP service - Status: %d, Title: %s, Tech: %s", result.StatusCode, result.Title, result.Technologies),
-			Headers:     []string{}, // TODO: Parse headers from result
+			HostID:       hostRecord.ID,
+			Host:         hostRecord,
+			Name:         serviceName,
+			Version:      result.Webserver,
+			Banner:       fmt.Sprintf("HTTP service - Status: %d, Title: %s, Tech: %s", result.StatusCode, result.Title, result.Technologies),
+			Headers:      []string{}, // TODO: Parse headers from result
 			Certificates: []string{}, // TODO: Extract cert info if HTTPS
-			Fingerprint: "",
-			CreatedAt:   result.Timestamp,
-			UpdatedAt:   result.Timestamp,
+			Fingerprint:  "",
+			CreatedAt:    result.Timestamp,
+			UpdatedAt:    result.Timestamp,
 		}
 
 		if err := h.db.CreateService(service); err != nil {
@@ -394,7 +394,7 @@ func (h *HTTPXIntegration) ProbeSpecificServices(hostPorts []string) ([]HTTPXRes
 // ProbeCommonPorts probes common HTTP ports on given hosts
 func (h *HTTPXIntegration) ProbeCommonPorts(hosts []string) ([]HTTPXResult, error) {
 	commonPorts := []int{80, 443, 8080, 8443, 8000, 8888, 9000, 9090, 3000, 5000}
-	
+
 	config := &HTTPXConfig{
 		Ports:           commonPorts,
 		Threads:         25,
@@ -450,7 +450,7 @@ func (h *HTTPXIntegration) GenerateReport(results []HTTPXResult) string {
 			if server == "" {
 				server = "unknown"
 			}
-			report.WriteString(fmt.Sprintf("  %s [%d] - %s", 
+			report.WriteString(fmt.Sprintf("  %s [%d] - %s",
 				result.URL, result.StatusCode, server))
 			if result.Title != "" {
 				report.WriteString(fmt.Sprintf(" - %s", result.Title))
@@ -471,7 +471,7 @@ func (h *HTTPXIntegration) GenerateReport(results []HTTPXResult) string {
 			if server == "" {
 				server = "unknown"
 			}
-			report.WriteString(fmt.Sprintf("  %s [%d] - %s", 
+			report.WriteString(fmt.Sprintf("  %s [%d] - %s",
 				result.URL, result.StatusCode, server))
 			if result.Title != "" {
 				report.WriteString(fmt.Sprintf(" - %s", result.Title))

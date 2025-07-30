@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/recon-platform/core/internal/workspace"
+	"toolkit/internal/workspace"
+
 	"github.com/spf13/cobra"
 )
 

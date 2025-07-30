@@ -2,8 +2,9 @@ package database
 
 import (
 	"time"
-	
-	"github.com/recon-platform/core/pkg/models"
+
+	"toolkit/pkg/models"
+
 	"gorm.io/gorm"
 )
 
@@ -21,7 +22,7 @@ func NewHostRepository(db *gorm.DB) *HostRepository {
 func (r *HostRepository) CreateOrUpdateHost(host *models.Host) error {
 	var existing models.Host
 	result := r.db.Where("ip = ?", host.IP).First(&existing)
-	
+
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			// Create new host
@@ -31,7 +32,7 @@ func (r *HostRepository) CreateOrUpdateHost(host *models.Host) error {
 		}
 		return result.Error
 	}
-	
+
 	// Update existing host
 	existing.Hostname = host.Hostname
 	existing.Status = host.Status
@@ -40,7 +41,7 @@ func (r *HostRepository) CreateOrUpdateHost(host *models.Host) error {
 	existing.MAC = host.MAC
 	existing.TTL = host.TTL
 	existing.LastSeen = time.Now()
-	
+
 	return r.db.Save(&existing).Error
 }
 
@@ -54,7 +55,7 @@ func (r *HostRepository) GetHostByIP(ip string) (*models.Host, error) {
 		Preload("Credentials").
 		Preload("Files").
 		First(&host).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -65,19 +66,19 @@ func (r *HostRepository) GetHostByIP(ip string) (*models.Host, error) {
 func (r *HostRepository) GetAllHosts(status string, limit, offset int) ([]models.Host, error) {
 	var hosts []models.Host
 	query := r.db.Model(&models.Host{})
-	
+
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}
-	
+
 	if limit > 0 {
 		query = query.Limit(limit)
 	}
-	
+
 	if offset > 0 {
 		query = query.Offset(offset)
 	}
-	
+
 	err := query.Find(&hosts).Error
 	return hosts, err
 }
@@ -109,9 +110,9 @@ func (r *VulnerabilityRepository) GetVulnerabilitiesBySeverity(severity string) 
 // GetVulnerabilityStats returns vulnerability statistics
 func (r *VulnerabilityRepository) GetVulnerabilityStats() (map[string]int64, error) {
 	stats := make(map[string]int64)
-	
+
 	severities := []string{"critical", "high", "medium", "low", "info"}
-	
+
 	for _, severity := range severities {
 		var count int64
 		err := r.db.Model(&models.Vulnerability{}).
@@ -122,7 +123,7 @@ func (r *VulnerabilityRepository) GetVulnerabilityStats() (map[string]int64, err
 		}
 		stats[severity] = count
 	}
-	
+
 	return stats, nil
 }
 
@@ -139,22 +140,22 @@ func NewPortRepository(db *gorm.DB) *PortRepository {
 // CreateOrUpdatePort creates a new port or updates existing one
 func (r *PortRepository) CreateOrUpdatePort(port *models.Port) error {
 	var existing models.Port
-	result := r.db.Where("host_id = ? AND port = ? AND protocol = ?", 
+	result := r.db.Where("host_id = ? AND port = ? AND protocol = ?",
 		port.HostID, port.Port, port.Protocol).First(&existing)
-	
+
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return r.db.Create(port).Error
 		}
 		return result.Error
 	}
-	
+
 	// Update existing port
 	existing.State = port.State
 	existing.Service = port.Service
 	existing.Version = port.Version
 	existing.Banner = port.Banner
-	
+
 	return r.db.Save(&existing).Error
 }
 
@@ -181,7 +182,7 @@ func NewDomainRepository(db *gorm.DB) *DomainRepository {
 func (r *DomainRepository) CreateOrUpdateDomain(domain *models.Domain) error {
 	var existing models.Domain
 	result := r.db.Where("domain = ?", domain.Domain).First(&existing)
-	
+
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			domain.FirstSeen = time.Now()
@@ -190,7 +191,7 @@ func (r *DomainRepository) CreateOrUpdateDomain(domain *models.Domain) error {
 		}
 		return result.Error
 	}
-	
+
 	// Update existing domain
 	existing.IP = domain.IP
 	existing.Technologies = domain.Technologies
@@ -200,7 +201,7 @@ func (r *DomainRepository) CreateOrUpdateDomain(domain *models.Domain) error {
 	existing.ContentType = domain.ContentType
 	existing.Certificates = domain.Certificates
 	existing.LastSeen = time.Now()
-	
+
 	return r.db.Save(&existing).Error
 }
 
@@ -224,26 +225,26 @@ func NewSearchRepository(db *gorm.DB) *SearchRepository {
 // SearchByKeyword performs keyword search across multiple tables
 func (r *SearchRepository) SearchByKeyword(keyword string) (map[string]interface{}, error) {
 	results := make(map[string]interface{})
-	
+
 	// Search hosts
 	var hosts []models.Host
-	r.db.Where("ip LIKE ? OR hostname LIKE ? OR os LIKE ?", 
+	r.db.Where("ip LIKE ? OR hostname LIKE ? OR os LIKE ?",
 		"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%").Find(&hosts)
 	results["hosts"] = hosts
-	
+
 	// Search domains
 	var domains []models.Domain
-	r.db.Where("domain LIKE ? OR subdomain LIKE ? OR title LIKE ?", 
+	r.db.Where("domain LIKE ? OR subdomain LIKE ? OR title LIKE ?",
 		"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%").Find(&domains)
 	results["domains"] = domains
-	
+
 	// Search vulnerabilities
 	var vulns []models.Vulnerability
-	r.db.Where("name LIKE ? OR description LIKE ? OR cve LIKE ?", 
+	r.db.Where("name LIKE ? OR description LIKE ? OR cve LIKE ?",
 		"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%").
 		Preload("Host").Find(&vulns)
 	results["vulnerabilities"] = vulns
-	
+
 	return results, nil
 }
 
@@ -251,11 +252,11 @@ func (r *SearchRepository) SearchByKeyword(keyword string) (map[string]interface
 func (r *SearchRepository) GetRecentActivity(hours int) ([]models.ScanSession, error) {
 	var sessions []models.ScanSession
 	since := time.Now().Add(-time.Duration(hours) * time.Hour)
-	
+
 	err := r.db.Where("created_at > ?", since).
 		Order("created_at DESC").
 		Find(&sessions).Error
-	
+
 	return sessions, err
 }
 
@@ -263,37 +264,37 @@ func (r *SearchRepository) GetRecentActivity(hours int) ([]models.ScanSession, e
 func (r *SearchRepository) GetDiscoveryTimeline(days int) (map[string]interface{}, error) {
 	timeline := make(map[string]interface{})
 	since := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
-	
+
 	// Hosts discovered over time
 	var hostStats []struct {
 		Date  string `json:"date"`
 		Count int64  `json:"count"`
 	}
-	
+
 	r.db.Model(&models.Host{}).
 		Select("DATE(first_seen) as date, COUNT(*) as count").
 		Where("first_seen > ?", since).
 		Group("DATE(first_seen)").
 		Order("date").
 		Find(&hostStats)
-	
+
 	timeline["hosts"] = hostStats
-	
+
 	// Vulnerabilities discovered over time
 	var vulnStats []struct {
 		Date     string `json:"date"`
 		Severity string `json:"severity"`
 		Count    int64  `json:"count"`
 	}
-	
+
 	r.db.Model(&models.Vulnerability{}).
 		Select("DATE(created_at) as date, severity, COUNT(*) as count").
 		Where("created_at > ?", since).
 		Group("DATE(created_at), severity").
 		Order("date, severity").
 		Find(&vulnStats)
-	
+
 	timeline["vulnerabilities"] = vulnStats
-	
+
 	return timeline, nil
 }

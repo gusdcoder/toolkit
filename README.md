@@ -6,7 +6,7 @@
 
 ```bash
 # Install (coming soon)
-go install github.com/recon-platform/core/cmd/recon@latest
+go install toolkit/cmd/recon@latest
 
 # Basic scan
 recon scan -d example.com

@@ -7,12 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/recon-platform/core/internal/database"
-	"github.com/recon-platform/core/internal/integrations"
-	"github.com/recon-platform/core/internal/integrations/httpx"
-	"github.com/recon-platform/core/internal/integrations/naabu"
-	"github.com/recon-platform/core/internal/integrations/nuclei"
-	"github.com/recon-platform/core/pkg/models"
+	"toolkit/internal/database"
+	"toolkit/internal/integrations"
+	"toolkit/internal/integrations/httpx"
+	"toolkit/internal/integrations/naabu"
+	"toolkit/internal/integrations/nuclei"
+	"toolkit/pkg/models"
 )
 
 // ScanConfig holds configuration for a scan session

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/recon-platform/core/internal/database"
-	"github.com/recon-platform/core/pkg/models"
+	"toolkit/internal/database"
+	"toolkit/pkg/models"
 )
 
 // NaabuIntegration provides interface to Naabu port scanner
@@ -23,25 +23,25 @@ type NaabuIntegration struct {
 
 // NaabuResult represents a single port scan result
 type NaabuResult struct {
-	Host      string `json:"host"`
-	Port      int    `json:"port"`
-	Protocol  string `json:"protocol"`
-	Status    string `json:"status"`
-	Service   string `json:"service,omitempty"`
-	Banner    string `json:"banner,omitempty"`
+	Host      string    `json:"host"`
+	Port      int       `json:"port"`
+	Protocol  string    `json:"protocol"`
+	Status    string    `json:"status"`
+	Service   string    `json:"service,omitempty"`
+	Banner    string    `json:"banner,omitempty"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
 // NaabuConfig holds configuration for Naabu scans
 type NaabuConfig struct {
-	Ports         []int
-	PortRange     string
-	TopPorts      int
-	Threads       int
-	Rate          int
-	Timeout       int
-	Retries       int
-	ExcludePorts  []int
+	Ports            []int
+	PortRange        string
+	TopPorts         int
+	Threads          int
+	Rate             int
+	Timeout          int
+	Retries          int
+	ExcludePorts     []int
 	ServiceDetection bool
 	VerboseOutput    bool
 }
@@ -281,7 +281,7 @@ func (n *NaabuIntegration) RunFullPortScan(host string) (int, error) {
 
 		if err := n.db.CreatePort(port); err != nil {
 			if n.verbose {
-				fmt.Printf("[NAABU] Failed to store port %d/%s for %s: %v\n", 
+				fmt.Printf("[NAABU] Failed to store port %d/%s for %s: %v\n",
 					result.Port, result.Protocol, host, err)
 			}
 			continue

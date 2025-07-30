@@ -5,8 +5,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	
-	"github.com/recon-platform/core/pkg/models"
+
+	"toolkit/pkg/models"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -63,14 +64,14 @@ func NewDatabase(config *Config) (*DatabaseWrapper, error) {
 	if config.Type == "postgres" || config.Type == "postgresql" {
 		return newPostgresDatabase(config)
 	}
-	
+
 	// For SQLite or default, fall back to memory database
 	log.Printf("Using in-memory database (JSON persistence) for development")
 	memDB, err := NewMemoryDatabase(config.DataDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create memory database: %w", err)
 	}
-	
+
 	return &DatabaseWrapper{
 		Memory: memDB,
 		Type:   "memory",
@@ -82,14 +83,14 @@ func newPostgresDatabase(config *Config) (*DatabaseWrapper, error) {
 	gormConfig := &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	}
-	
+
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s",
 		config.Host, config.User, config.Password, config.DBName, config.Port, config.SSLMode)
 	db, err := gorm.Open(postgres.Open(dsn), gormConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to PostgreSQL: %w", err)
 	}
-	
+
 	// Auto-migrate the schema
 	if err := db.AutoMigrate(
 		&models.Host{},
@@ -104,12 +105,12 @@ func newPostgresDatabase(config *Config) (*DatabaseWrapper, error) {
 	); err != nil {
 		return nil, fmt.Errorf("failed to migrate database schema: %w", err)
 	}
-	
+
 	// Create indexes for better performance
 	if err := createIndexes(db); err != nil {
 		log.Printf("Warning: failed to create some indexes: %v", err)
 	}
-	
+
 	return &DatabaseWrapper{
 		DB:   db,
 		Type: "postgres",
@@ -127,13 +128,13 @@ func createIndexes(db *gorm.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_services_name ON services(name)",
 		"CREATE INDEX IF NOT EXISTS idx_files_type ON files(type)",
 	}
-	
+
 	for _, index := range indexes {
 		if err := db.Exec(index).Error; err != nil {
 			log.Printf("Failed to create index: %s - %v", index, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -216,10 +217,10 @@ func (d *DatabaseWrapper) GetVulnerabilityStats() (map[string]int64, error) {
 	if d.Type == "memory" {
 		return d.Memory.GetVulnerabilityStats()
 	}
-	
+
 	stats := make(map[string]int64)
 	severities := []string{"critical", "high", "medium", "low", "info"}
-	
+
 	for _, severity := range severities {
 		var count int64
 		err := d.DB.Model(&models.Vulnerability{}).
@@ -230,7 +231,7 @@ func (d *DatabaseWrapper) GetVulnerabilityStats() (map[string]int64, error) {
 		}
 		stats[severity] = count
 	}
-	
+
 	return stats, nil
 }
 
@@ -238,25 +239,25 @@ func (d *DatabaseWrapper) SearchByKeyword(keyword string) (map[string]interface{
 	if d.Type == "memory" {
 		return d.Memory.SearchByKeyword(keyword)
 	}
-	
+
 	results := make(map[string]interface{})
-	
+
 	// Search hosts
 	var hosts []models.Host
 	d.DB.Where("ip LIKE ? OR hostname LIKE ?", "%"+keyword+"%", "%"+keyword+"%").Find(&hosts)
 	results["hosts"] = hosts
-	
+
 	// Search domains
 	var domains []models.Domain
 	d.DB.Where("domain LIKE ? OR title LIKE ?", "%"+keyword+"%", "%"+keyword+"%").Find(&domains)
 	results["domains"] = domains
-	
+
 	// Search vulnerabilities
 	var vulns []models.Vulnerability
 	d.DB.Where("name LIKE ? OR cve LIKE ?", "%"+keyword+"%", "%"+keyword+"%").
 		Preload("Host").Find(&vulns)
 	results["vulnerabilities"] = vulns
-	
+
 	return results, nil
 }
 
@@ -264,9 +265,9 @@ func (d *DatabaseWrapper) GetCounts() (map[string]int64, error) {
 	if d.Type == "memory" {
 		return d.Memory.GetCounts()
 	}
-	
+
 	counts := make(map[string]int64)
-	
+
 	// Count various entities
 	var hostCount, portCount, domainCount, vulnCount, serviceCount, fileCount, openPortCount int64
 	d.DB.Model(&models.Host{}).Count(&hostCount)
@@ -276,7 +277,7 @@ func (d *DatabaseWrapper) GetCounts() (map[string]int64, error) {
 	d.DB.Model(&models.Service{}).Count(&serviceCount)
 	d.DB.Model(&models.File{}).Count(&fileCount)
 	d.DB.Model(&models.Port{}).Where("state = ?", "open").Count(&openPortCount)
-	
+
 	counts["hosts"] = hostCount
 	counts["ports"] = portCount
 	counts["domains"] = domainCount
@@ -284,7 +285,7 @@ func (d *DatabaseWrapper) GetCounts() (map[string]int64, error) {
 	counts["services"] = serviceCount
 	counts["files"] = fileCount
 	counts["open_ports"] = openPortCount
-	
+
 	return counts, nil
 }
 
@@ -323,7 +324,7 @@ func (d *DatabaseWrapper) Close() error {
 	if d.Type == "memory" {
 		return d.Memory.Close()
 	}
-	
+
 	sqlDB, err := d.DB.DB()
 	if err != nil {
 		return err
@@ -336,7 +337,7 @@ func (d *DatabaseWrapper) Health() error {
 	if d.Type == "memory" {
 		return d.Memory.Health()
 	}
-	
+
 	sqlDB, err := d.DB.DB()
 	if err != nil {
 		return err
@@ -348,7 +349,7 @@ func (d *DatabaseWrapper) Health() error {
 func GetDefaultConfig() *Config {
 	homeDir, _ := os.UserHomeDir()
 	dataDir := filepath.Join(homeDir, ".recon-platform")
-	
+
 	return &Config{
 		Type:    "memory", // Changed from "sqlite" to "memory"
 		DataDir: dataDir,

@@ -13,8 +13,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/recon-platform/core/internal/database"
-	"github.com/recon-platform/core/internal/integrations"
+	"toolkit/internal/database"
+	"toolkit/internal/integrations"
 )
 
 // UI States

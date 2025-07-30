@@ -8,9 +8,10 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/recon-platform/core/internal/database"
-	"github.com/recon-platform/core/internal/workspace"
-	"github.com/recon-platform/core/pkg/models"
+	"toolkit/internal/database"
+	"toolkit/internal/workspace"
+	"toolkit/pkg/models"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
