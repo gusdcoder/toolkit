@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(git config:*)",
+      "Bash(go mod init:*)",
+      "Bash(mkdir:*)",
+      "Bash(go mod:*)",
+      "Bash(go build:*)",
+      "Bash(go get:*)",
+      "Bash(.recon.exe --help)",
+      "Bash(./recon.exe --help)",
+      "Bash(./recon.exe scan:*)",
+      "Bash(./recon.exe query:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}
