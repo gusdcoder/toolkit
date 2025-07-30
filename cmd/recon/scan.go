@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"os"
 	"time"
-	
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+
 	"github.com/recon-platform/core/internal/database"
 	"github.com/recon-platform/core/internal/pipeline"
+	uiscan "github.com/recon-platform/core/internal/ui/scan"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -22,6 +23,7 @@ var (
 	tools       []string
 	threads     int
 	timeout     int
+	interactive bool
 )
 
 // scanCmd represents the scan command
@@ -33,6 +35,9 @@ var scanCmd = &cobra.Command{
 Examples:
   # Basic domain scan
   recon scan -d example.com
+
+  # Run in interactive mode
+  recon scan --interactive
   
   # Vertical scan (deep dive)
   recon scan -d example.com --vertical
@@ -48,7 +53,12 @@ Examples:
   
   # Network range scan
   recon scan -t 10.0.0.0/24 --vertical`,
-	RunE: runScan,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if interactive {
+			return uiscan.Start()
+		}
+		return runNonInteractiveScan(cmd, args)
+	},
 }
 
 func init() {
@@ -75,12 +85,13 @@ func init() {
 		"number of threads (default: from config)")
 	scanCmd.Flags().IntVar(&timeout, "timeout", 0, 
 		"timeout in seconds (default: from config)")
+	scanCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Run in interactive mode")
 	
 	// Mark required flags
-	scanCmd.MarkFlagsOneRequired("target", "domain")
+	// scanCmd.MarkFlagsOneRequired("target", "domain") // This is handled by the interactive UI
 }
 
-func runScan(cmd *cobra.Command, args []string) error {
+func runNonInteractiveScan(cmd *cobra.Command, args []string) error {
 	// Validate input
 	if target == "" && len(domains) == 0 {
 		return fmt.Errorf("must specify either --target or --domain")

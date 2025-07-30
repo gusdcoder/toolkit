@@ -16,7 +16,8 @@
       "Bash(git commit:*)",
       "Bash(set CGO_ENABLED=1)",
       "Bash($env:CGO_ENABLED=1)",
-      "Bash(CGO_ENABLED=1 go build -o recon.exe ./cmd)"
+      "Bash(CGO_ENABLED=1 go build -o recon.exe ./cmd)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }

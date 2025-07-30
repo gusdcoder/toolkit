@@ -106,8 +106,8 @@ func (db *MemoryDatabase) loadFromFile() error {
 }
 
 // saveToFile saves data to JSON file
+// NOTE: This method should be called from within a method that already holds the lock
 func (db *MemoryDatabase) saveToFile() error {
-	db.mutex.RLock()
 	memData := memoryData{
 		Hosts:           db.hosts,
 		Ports:           db.ports,
@@ -120,7 +120,32 @@ func (db *MemoryDatabase) saveToFile() error {
 		Sessions:        db.sessions,
 		NextID:          db.nextID,
 	}
-	db.mutex.RUnlock()
+	
+	data, err := json.MarshalIndent(memData, "", "  ")
+	if err != nil {
+		return err
+	}
+	
+	return os.WriteFile(db.dataFile, data, 0644)
+}
+
+// saveToFileWithLock saves data to JSON file with proper locking
+func (db *MemoryDatabase) saveToFileWithLock() error {
+	db.mutex.RLock()
+	defer db.mutex.RUnlock()
+	
+	memData := memoryData{
+		Hosts:           db.hosts,
+		Ports:           db.ports,
+		Domains:         db.domains,
+		Vulnerabilities: db.vulnerabilities,
+		Networks:        db.networks,
+		Services:        db.services,
+		Credentials:     db.credentials,
+		Files:           db.files,
+		Sessions:        db.sessions,
+		NextID:          db.nextID,
+	}
 	
 	data, err := json.MarshalIndent(memData, "", "  ")
 	if err != nil {
@@ -377,7 +402,7 @@ func (db *MemoryDatabase) GetCounts() (map[string]int64, error) {
 
 // Close saves data and closes the database
 func (db *MemoryDatabase) Close() error {
-	return db.saveToFile()
+	return db.saveToFileWithLock()
 }
 
 // Health check
