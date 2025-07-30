@@ -31,10 +31,13 @@ type Config struct {
 type DatabaseInterface interface {
 	CreateHost(host *models.Host) error
 	GetHostByIP(ip string) (*models.Host, error)
+	GetHostsByIP(ip string) ([]models.Host, error)
 	GetAllHosts() ([]models.Host, error)
 	UpdateHost(host *models.Host) error
 	CreatePort(port *models.Port) error
 	GetOpenPorts() ([]models.Port, error)
+	CreateService(service *models.Service) error
+	GetAllServices() ([]models.Service, error)
 	CreateVulnerability(vuln *models.Vulnerability) error
 	GetVulnerabilityStats() (map[string]int64, error)
 	CreateDomain(domain *models.Domain) error
@@ -152,6 +155,15 @@ func (d *DatabaseWrapper) GetHostByIP(ip string) (*models.Host, error) {
 	return &host, err
 }
 
+func (d *DatabaseWrapper) GetHostsByIP(ip string) ([]models.Host, error) {
+	if d.Type == "memory" {
+		return d.Memory.GetHostsByIP(ip)
+	}
+	var hosts []models.Host
+	err := d.DB.Where("ip = ?", ip).Find(&hosts).Error
+	return hosts, err
+}
+
 func (d *DatabaseWrapper) GetAllHosts() ([]models.Host, error) {
 	if d.Type == "memory" {
 		return d.Memory.GetAllHosts()
@@ -161,6 +173,29 @@ func (d *DatabaseWrapper) GetAllHosts() ([]models.Host, error) {
 	return hosts, err
 }
 
+func (d *DatabaseWrapper) CreatePort(port *models.Port) error {
+	if d.Type == "memory" {
+		return d.Memory.CreatePort(port)
+	}
+	return d.DB.Create(port).Error
+}
+
+func (d *DatabaseWrapper) CreateService(service *models.Service) error {
+	if d.Type == "memory" {
+		return d.Memory.CreateService(service)
+	}
+	return d.DB.Create(service).Error
+}
+
+func (d *DatabaseWrapper) GetAllServices() ([]models.Service, error) {
+	if d.Type == "memory" {
+		return d.Memory.GetAllServices()
+	}
+	var services []models.Service
+	err := d.DB.Preload("Host").Find(&services).Error
+	return services, err
+}
+
 func (d *DatabaseWrapper) GetOpenPorts() ([]models.Port, error) {
 	if d.Type == "memory" {
 		return d.Memory.GetOpenPorts()
@@ -168,6 +203,13 @@ func (d *DatabaseWrapper) GetOpenPorts() ([]models.Port, error) {
 	var ports []models.Port
 	err := d.DB.Where("state = ?", "open").Preload("Host").Find(&ports).Error
 	return ports, err
+}
+
+func (d *DatabaseWrapper) CreateVulnerability(vuln *models.Vulnerability) error {
+	if d.Type == "memory" {
+		return d.Memory.CreateVulnerability(vuln)
+	}
+	return d.DB.Create(vuln).Error
 }
 
 func (d *DatabaseWrapper) GetVulnerabilityStats() (map[string]int64, error) {
@@ -267,6 +309,13 @@ func (d *DatabaseWrapper) GetAllDomains() ([]models.Domain, error) {
 	var domains []models.Domain
 	err := d.DB.Find(&domains).Error
 	return domains, err
+}
+
+func (d *DatabaseWrapper) CreateDomain(domain *models.Domain) error {
+	if d.Type == "memory" {
+		return d.Memory.CreateDomain(domain)
+	}
+	return d.DB.Create(domain).Error
 }
 
 // Close closes the database connection

@@ -190,6 +190,19 @@ func (db *MemoryDatabase) GetHostByIP(ip string) (*models.Host, error) {
 	return nil, fmt.Errorf("host not found")
 }
 
+func (db *MemoryDatabase) GetHostsByIP(ip string) ([]models.Host, error) {
+	db.mutex.RLock()
+	defer db.mutex.RUnlock()
+	
+	var hosts []models.Host
+	for _, host := range db.hosts {
+		if host.IP == ip {
+			hosts = append(hosts, host)
+		}
+	}
+	return hosts, nil
+}
+
 func (db *MemoryDatabase) GetAllHosts() ([]models.Host, error) {
 	db.mutex.RLock()
 	defer db.mutex.RUnlock()
@@ -301,6 +314,27 @@ func (db *MemoryDatabase) GetAllDomains() ([]models.Domain, error) {
 	defer db.mutex.RUnlock()
 	
 	return db.domains, nil
+}
+
+// Service operations
+func (db *MemoryDatabase) CreateService(service *models.Service) error {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+	
+	now := time.Now()
+	service.ID = db.getNextID()
+	service.CreatedAt = now
+	service.UpdatedAt = now
+	
+	db.services = append(db.services, *service)
+	return db.saveToFile()
+}
+
+func (db *MemoryDatabase) GetAllServices() ([]models.Service, error) {
+	db.mutex.RLock()
+	defer db.mutex.RUnlock()
+	
+	return db.services, nil
 }
 
 // Session operations

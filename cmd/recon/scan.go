@@ -8,6 +8,7 @@ import (
 	"github.com/recon-platform/core/internal/database"
 	"github.com/recon-platform/core/internal/pipeline"
 	uiscan "github.com/recon-platform/core/internal/ui/scan"
+	"github.com/recon-platform/core/internal/workspace"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -54,6 +55,11 @@ Examples:
   # Network range scan
   recon scan -t 10.0.0.0/24 --vertical`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Check if workspace is set
+		if err := requireWorkspace(); err != nil {
+			return err
+		}
+
 		if interactive {
 			return uiscan.Start()
 		}
@@ -63,30 +69,30 @@ Examples:
 
 func init() {
 	rootCmd.AddCommand(scanCmd)
-	
+
 	// Scan flags
-	scanCmd.Flags().StringVarP(&target, "target", "t", "", 
+	scanCmd.Flags().StringVarP(&target, "target", "t", "",
 		"target IP, CIDR, or hostname")
-	scanCmd.Flags().StringSliceVarP(&domains, "domain", "d", []string{}, 
+	scanCmd.Flags().StringSliceVarP(&domains, "domain", "d", []string{},
 		"domain(s) to scan (can be used multiple times)")
-	scanCmd.Flags().BoolVar(&vertical, "vertical", false, 
+	scanCmd.Flags().BoolVar(&vertical, "vertical", false,
 		"enable vertical scanning (deep dive)")
-	scanCmd.Flags().BoolVar(&horizontal, "horizontal", false, 
+	scanCmd.Flags().BoolVar(&horizontal, "horizontal", false,
 		"enable horizontal scanning (broad discovery)")
-	scanCmd.Flags().BoolVar(&allTools, "all-tools", false, 
+	scanCmd.Flags().BoolVar(&allTools, "all-tools", false,
 		"use all available tools")
-	scanCmd.Flags().StringSliceVar(&tools, "tools", []string{}, 
+	scanCmd.Flags().StringSliceVar(&tools, "tools", []string{},
 		"specific tools to use (comma-separated)")
-	scanCmd.Flags().StringVarP(&outputDir, "output", "o", "", 
+	scanCmd.Flags().StringVarP(&outputDir, "output", "o", "",
 		"output directory")
-	scanCmd.Flags().StringVar(&outputFile, "output-file", "", 
+	scanCmd.Flags().StringVar(&outputFile, "output-file", "",
 		"output file path")
-	scanCmd.Flags().IntVar(&threads, "threads", 0, 
+	scanCmd.Flags().IntVar(&threads, "threads", 0,
 		"number of threads (default: from config)")
-	scanCmd.Flags().IntVar(&timeout, "timeout", 0, 
+	scanCmd.Flags().IntVar(&timeout, "timeout", 0,
 		"timeout in seconds (default: from config)")
 	scanCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Run in interactive mode")
-	
+
 	// Mark required flags
 	// scanCmd.MarkFlagsOneRequired("target", "domain") // This is handled by the interactive UI
 }
@@ -96,25 +102,25 @@ func runNonInteractiveScan(cmd *cobra.Command, args []string) error {
 	if target == "" && len(domains) == 0 {
 		return fmt.Errorf("must specify either --target or --domain")
 	}
-	
+
 	// Initialize database
 	dbConfig := &database.Config{
-		Type:    viper.GetString("database.type"),
-		Host:    viper.GetString("database.host"),
-		Port:    viper.GetInt("database.port"),
-		User:    viper.GetString("database.user"),
+		Type:     viper.GetString("database.type"),
+		Host:     viper.GetString("database.host"),
+		Port:     viper.GetInt("database.port"),
+		User:     viper.GetString("database.user"),
 		Password: viper.GetString("database.password"),
-		DBName:  viper.GetString("database.dbname"),
-		SSLMode: viper.GetString("database.sslmode"),
-		DataDir: getDataDir(),
+		DBName:   viper.GetString("database.dbname"),
+		SSLMode:  viper.GetString("database.sslmode"),
+		DataDir:  getDataDir(),
 	}
-	
+
 	db, err := database.NewDatabase(dbConfig)
 	if err != nil {
 		return fmt.Errorf("failed to initialize database: %w", err)
 	}
 	defer db.Close()
-	
+
 	// Create scan configuration
 	scanConfig := &pipeline.ScanConfig{
 		Target:     target,
@@ -129,31 +135,72 @@ func runNonInteractiveScan(cmd *cobra.Command, args []string) error {
 		Verbose:    viper.GetBool("verbose"),
 		Debug:      viper.GetBool("debug"),
 	}
-	
+
 	// Initialize pipeline
 	reconPipeline := pipeline.NewPipeline(db, scanConfig)
-	
+
 	// Start scan
 	fmt.Printf("🚀 Starting reconnaissance scan...\n")
 	fmt.Printf("Target: %s\n", getTargetDisplay())
 	fmt.Printf("Mode: %s\n", getScanMode())
 	fmt.Printf("Tools: %s\n", getToolsDisplay())
 	fmt.Printf("Started: %s\n\n", time.Now().Format("2006-01-02 15:04:05"))
-	
+
 	results, err := reconPipeline.Execute()
 	if err != nil {
 		return fmt.Errorf("scan failed: %w", err)
 	}
-	
+
 	// Display results summary
 	displayResults(results)
-	
+
 	return nil
 }
 
 func getDataDir() string {
+	// Try to get workspace-specific data directory
+	ws, err := workspace.NewManager()
+	if err == nil {
+		currentWorkspacePath, err := ws.GetCurrentWorkspacePath()
+		if err == nil {
+			return fmt.Sprintf("%s/data", currentWorkspacePath)
+		}
+	}
+
+	// Fallback to home directory
 	home, _ := os.UserHomeDir()
 	return fmt.Sprintf("%s/.recon-platform", home)
+}
+
+// requireWorkspace checks if a workspace is currently active
+func requireWorkspace() error {
+	ws, err := workspace.NewManager()
+	if err != nil {
+		return fmt.Errorf("failed to initialize workspace manager: %w", err)
+	}
+
+	current, err := ws.GetCurrentWorkspace()
+	if err != nil {
+		return fmt.Errorf("failed to check current workspace: %w", err)
+	}
+
+	if current == "" {
+		return fmt.Errorf(`❌ No workspace is currently active.
+
+Please create and switch to a workspace before running scans:
+
+  # Create a new workspace
+  recon workspace create <workspace-name>
+
+  # Switch to an existing workspace  
+  recon workspace switch <workspace-name>
+
+  # List available workspaces
+  recon workspace list`)
+	}
+
+	fmt.Printf("📁 Using workspace: %s\n", current)
+	return nil
 }
 
 func getThreads() int {
@@ -216,7 +263,7 @@ func displayResults(results *pipeline.ScanResults) {
 		fmt.Println("❌ No results to display")
 		return
 	}
-	
+
 	fmt.Printf("✅ Scan completed successfully!\n\n")
 	fmt.Printf("📊 Results Summary:\n")
 	fmt.Printf("  • Hosts discovered: %d\n", results.HostsFound)
@@ -225,7 +272,7 @@ func displayResults(results *pipeline.ScanResults) {
 	fmt.Printf("  • Vulnerabilities: %d\n", results.VulnerabilitiesFound)
 	fmt.Printf("  • Services identified: %d\n", results.ServicesFound)
 	fmt.Printf("  • Files discovered: %d\n", results.FilesFound)
-	
+
 	if results.VulnerabilitiesFound > 0 {
 		fmt.Printf("\n🚨 Vulnerability Breakdown:\n")
 		for severity, count := range results.VulnerabilityStats {
@@ -235,14 +282,14 @@ func displayResults(results *pipeline.ScanResults) {
 			}
 		}
 	}
-	
+
 	fmt.Printf("\n⏱️  Scan Duration: %s\n", results.Duration)
 	fmt.Printf("📁 Results saved to database\n")
-	
+
 	if results.OutputFile != "" {
 		fmt.Printf("📄 Report saved: %s\n", results.OutputFile)
 	}
-	
+
 	fmt.Printf("\n💡 Use 'recon query' to explore the results\n")
 }
 
