@@ -1,4 +1,4 @@
-module github.com/recon-platform/core
+module toolkit
 
 go 1.24.5
 
