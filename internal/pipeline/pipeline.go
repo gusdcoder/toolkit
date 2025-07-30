@@ -42,14 +42,8 @@ type ScanResults struct {
 
 // Pipeline represents the intelligent reconnaissance pipeline
 type Pipeline struct {
-	db     *database.Database
+	db     *database.DatabaseWrapper
 	config *ScanConfig
-	
-	// Repositories
-	hostRepo *database.HostRepository
-	vulnRepo *database.VulnerabilityRepository
-	portRepo *database.PortRepository
-	domainRepo *database.DomainRepository
 	
 	// Session tracking
 	session *models.ScanSession
@@ -60,14 +54,10 @@ type Pipeline struct {
 }
 
 // NewPipeline creates a new reconnaissance pipeline
-func NewPipeline(db *database.Database, config *ScanConfig) *Pipeline {
+func NewPipeline(db *database.DatabaseWrapper, config *ScanConfig) *Pipeline {
 	return &Pipeline{
-		db:         db,
-		config:     config,
-		hostRepo:   database.NewHostRepository(db.DB),
-		vulnRepo:   database.NewVulnerabilityRepository(db.DB),
-		portRepo:   database.NewPortRepository(db.DB),
-		domainRepo: database.NewDomainRepository(db.DB),
+		db:     db,
+		config: config,
 	}
 }
 
@@ -157,7 +147,7 @@ func (p *Pipeline) createSession() error {
 		Errors:  []string{},
 	}
 	
-	return p.db.DB.Create(p.session).Error
+	return p.db.CreateSession(p.session)
 }
 
 // discoveryPhase performs initial target discovery
@@ -189,7 +179,7 @@ func (p *Pipeline) enumerationPhase() error {
 	p.logInfo("📊 Starting Enumeration Phase...")
 	
 	// Get discovered hosts for port scanning
-	hosts, err := p.hostRepo.GetAllHosts("", 0, 0)
+	hosts, err := p.db.GetAllHosts()
 	if err != nil {
 		return fmt.Errorf("failed to get hosts for enumeration: %w", err)
 	}
@@ -202,7 +192,7 @@ func (p *Pipeline) enumerationPhase() error {
 	}
 	
 	// Service enumeration
-	openPorts, err := p.portRepo.GetOpenPorts()
+	openPorts, err := p.db.GetOpenPorts()
 	if err != nil {
 		return fmt.Errorf("failed to get open ports: %w", err)
 	}
@@ -222,7 +212,7 @@ func (p *Pipeline) vulnerabilityPhase() error {
 	p.logInfo("🚨 Starting Vulnerability Assessment Phase...")
 	
 	// Get all discovered hosts and services for vulnerability scanning
-	hosts, err := p.hostRepo.GetAllHosts("", 0, 0)
+	hosts, err := p.db.GetAllHosts()
 	if err != nil {
 		return fmt.Errorf("failed to get hosts for vulnerability assessment: %w", err)
 	}
@@ -267,33 +257,20 @@ func (p *Pipeline) verticalPhase() error {
 
 // populateResults calculates and populates scan results
 func (p *Pipeline) populateResults(results *ScanResults) error {
-	// Count hosts
-	var hostCount int64
-	p.db.DB.Model(&models.Host{}).Count(&hostCount)
-	results.HostsFound = int(hostCount)
+	// Get counts from database
+	counts, err := p.db.GetCounts()
+	if err != nil {
+		return fmt.Errorf("failed to get counts: %w", err)
+	}
 	
-	// Count open ports
-	var portCount int64
-	p.db.DB.Model(&models.Port{}).Where("state = ?", "open").Count(&portCount)
-	results.OpenPorts = int(portCount)
-	
-	// Count domains
-	var domainCount int64
-	p.db.DB.Model(&models.Domain{}).Count(&domainCount)
-	results.DomainsFound = int(domainCount)
-	
-	// Count services
-	var serviceCount int64
-	p.db.DB.Model(&models.Service{}).Count(&serviceCount)
-	results.ServicesFound = int(serviceCount)
-	
-	// Count files
-	var fileCount int64
-	p.db.DB.Model(&models.File{}).Count(&fileCount)
-	results.FilesFound = int(fileCount)
+	results.HostsFound = int(counts["hosts"])
+	results.OpenPorts = int(counts["open_ports"])
+	results.DomainsFound = int(counts["domains"])
+	results.ServicesFound = int(counts["services"])
+	results.FilesFound = int(counts["files"])
 	
 	// Get vulnerability statistics
-	vulnStats, err := p.vulnRepo.GetVulnerabilityStats()
+	vulnStats, err := p.db.GetVulnerabilityStats()
 	if err != nil {
 		return fmt.Errorf("failed to get vulnerability statistics: %w", err)
 	}
@@ -324,7 +301,7 @@ func (p *Pipeline) completeSession(results *ScanResults) error {
 		"duration_seconds":     results.Duration.Seconds(),
 	}
 	
-	return p.db.DB.Save(p.session).Error
+	return p.db.UpdateSession(p.session)
 }
 
 // Utility methods
