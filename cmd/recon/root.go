@@ -10,9 +10,16 @@ import (
 )
 
 var (
-	cfgFile string
-	verbose bool
-	debug   bool
+	cfgFile    string
+	verbose    bool
+	debug      bool
+	dbType     string
+	dbHost     string
+	dbPort     int
+	dbUser     string
+	dbPassword string
+	dbName     string
+	dbSSLMode  string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -50,9 +57,32 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false,
 		"debug output")
 
+	// Database flags
+	rootCmd.PersistentFlags().StringVar(&dbType, "db-type", "postgres",
+		"database type (postgres, memory)")
+	rootCmd.PersistentFlags().StringVar(&dbHost, "db-host", "localhost",
+		"database host")
+	rootCmd.PersistentFlags().IntVar(&dbPort, "db-port", 5432,
+		"database port")
+	rootCmd.PersistentFlags().StringVar(&dbUser, "db-user", "postgres",
+		"database user")
+	rootCmd.PersistentFlags().StringVar(&dbPassword, "db-password", "postgres",
+		"database password")
+	rootCmd.PersistentFlags().StringVar(&dbName, "db-name", "recon_platform",
+		"database name")
+	rootCmd.PersistentFlags().StringVar(&dbSSLMode, "db-sslmode", "disable",
+		"database SSL mode (disable, require, verify-ca, verify-full)")
+
 	// Bind flags to viper
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
 	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
+	viper.BindPFlag("database.type", rootCmd.PersistentFlags().Lookup("db-type"))
+	viper.BindPFlag("database.host", rootCmd.PersistentFlags().Lookup("db-host"))
+	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("db-port"))
+	viper.BindPFlag("database.user", rootCmd.PersistentFlags().Lookup("db-user"))
+	viper.BindPFlag("database.password", rootCmd.PersistentFlags().Lookup("db-password"))
+	viper.BindPFlag("database.dbname", rootCmd.PersistentFlags().Lookup("db-name"))
+	viper.BindPFlag("database.sslmode", rootCmd.PersistentFlags().Lookup("db-sslmode"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -92,12 +122,13 @@ func initConfig() {
 
 func setDefaults() {
 	// Database defaults
-	viper.SetDefault("database.type", "sqlite")
+	viper.SetDefault("database.type", "postgres")
 	viper.SetDefault("database.host", "localhost")
 	viper.SetDefault("database.port", 5432)
-	viper.SetDefault("database.user", "recon")
-	viper.SetDefault("database.password", "")
-	viper.SetDefault("database.dbname", "recon")
+	viper.SetDefault("database.user", "postgres")
+	viper.SetDefault("database.password", "postgres")
+	viper.SetDefault("database.dbname", "recon_platform")
+	viper.SetDefault("database.sslmode", "disable")
 	viper.SetDefault("database.sslmode", "disable")
 
 	// Scanning defaults

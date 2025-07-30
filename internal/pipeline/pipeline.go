@@ -355,8 +355,9 @@ func (p *Pipeline) enumerateSubdomains(domain string) error {
 	defer cancel()
 
 	// Use subfinder tool
-	result, err := p.toolManager.RunTool(ctx, "subfinder", domain, map[string]interface{}{
+	result, err := p.toolManager.RunTool(ctx, "subfinder", map[string]interface{}{
 		"silent": true,
+		"domain": domain,
 	})
 
 	if err != nil {
@@ -365,15 +366,22 @@ func (p *Pipeline) enumerateSubdomains(domain string) error {
 		return nil // Don't fail the entire scan
 	}
 
+	// Type assert result to expected type (assuming []models.Domain)
+	domains, ok := result.([]models.Domain)
+	if !ok {
+		p.logError(fmt.Errorf("unexpected result type from subfinder"), "Type assertion failed")
+		return nil
+	}
+
 	// Store results in database
-	for _, domainResult := range result.Domains {
+	for _, domainResult := range domains {
 		if err := p.db.CreateDomain(&domainResult); err != nil {
 			p.logError(err, "Failed to store domain in database")
 		}
 	}
 
-	p.logInfo(fmt.Sprintf("Found %d subdomains for %s", len(result.Domains), domain))
-	p.updateProgress("🌐 Subdomain Enumeration", 1.0, "complete", fmt.Sprintf("Found %d subdomains", len(result.Domains)))
+	p.logInfo(fmt.Sprintf("Found %d subdomains for %s", len(domains), domain))
+	p.updateProgress("🌐 Subdomain Enumeration", 1.0, "complete", fmt.Sprintf("Found %d subdomains", len(domains)))
 	return nil
 }
 

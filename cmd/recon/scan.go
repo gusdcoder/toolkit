@@ -106,13 +106,13 @@ func runNonInteractiveScan(cmd *cobra.Command, args []string) error {
 
 	// Initialize database
 	dbConfig := &database.Config{
-		Type:     viper.GetString("database.type"),
-		Host:     viper.GetString("database.host"),
-		Port:     viper.GetInt("database.port"),
-		User:     viper.GetString("database.user"),
-		Password: viper.GetString("database.password"),
-		DBName:   viper.GetString("database.dbname"),
-		SSLMode:  viper.GetString("database.sslmode"),
+		Type:     getConfigString("database.type", "postgres"),
+		Host:     getConfigString("database.host", "localhost"),
+		Port:     getConfigInt("database.port", 5432),
+		User:     getConfigString("database.user", "postgres"),
+		Password: getConfigString("database.password", "postgres"),
+		DBName:   getConfigString("database.dbname", "recon_platform"),
+		SSLMode:  getConfigString("database.sslmode", "disable"),
 		DataDir:  getDataDir(),
 	}
 

@@ -60,12 +60,30 @@ type DatabaseWrapper struct {
 
 // NewDatabase creates a new database connection with fallback to memory
 func NewDatabase(config *Config) (*DatabaseWrapper, error) {
-	// Try PostgreSQL first if specified
+	// Try PostgreSQL first if specified or as default
 	if config.Type == "postgres" || config.Type == "postgresql" {
-		return newPostgresDatabase(config)
+		dbWrapper, err := newPostgresDatabase(config)
+		if err != nil {
+			log.Printf("⚠️  PostgreSQL connection failed: %v", err)
+			log.Printf("📋 Falling back to in-memory database...")
+
+			// Fallback to memory database
+			memDB, memErr := NewMemoryDatabase(config.DataDir)
+			if memErr != nil {
+				return nil, fmt.Errorf("failed to create memory database: %w", memErr)
+			}
+
+			return &DatabaseWrapper{
+				Memory: memDB,
+				Type:   "memory",
+			}, nil
+		}
+
+		log.Printf("🐘 Connected to PostgreSQL database successfully")
+		return dbWrapper, nil
 	}
 
-	// For SQLite or default, fall back to memory database
+	// For memory or other types, use memory database
 	log.Printf("Using in-memory database (JSON persistence) for development")
 	memDB, err := NewMemoryDatabase(config.DataDir)
 	if err != nil {
@@ -351,7 +369,24 @@ func GetDefaultConfig() *Config {
 	dataDir := filepath.Join(homeDir, ".recon-platform")
 
 	return &Config{
-		Type:    "memory", // Changed from "sqlite" to "memory"
+		Type:     "postgres", // Default to PostgreSQL
+		Host:     "localhost",
+		Port:     5432,
+		User:     "postgres",
+		Password: "postgres",
+		DBName:   "recon_platform",
+		SSLMode:  "disable",
+		DataDir:  dataDir,
+	}
+}
+
+// GetMemoryConfig returns memory database configuration as fallback
+func GetMemoryConfig() *Config {
+	homeDir, _ := os.UserHomeDir()
+	dataDir := filepath.Join(homeDir, ".recon-platform")
+
+	return &Config{
+		Type:    "memory",
 		DataDir: dataDir,
 	}
 }

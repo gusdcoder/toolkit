@@ -460,11 +460,17 @@ func (m model) runSubfinderPhase(target string) tea.Cmd {
 	}
 
 	return func() tea.Msg {
-		result, err := m.toolManager.RunTool(m.scanCtx, "subfinder", target, nil)
+		result, err := m.toolManager.RunTool(m.scanCtx, "subfinder", map[string]interface{}{"target": target})
 		resultCount := 0
 		success := err == nil
 		if result != nil {
-			resultCount = len(result.Domains)
+			if subfinderResult, ok := result.(map[string]interface{}); ok {
+				if domains, ok := subfinderResult["Domains"].([]string); ok {
+					resultCount = len(domains)
+				} else if domains, ok := subfinderResult["domains"].([]string); ok {
+					resultCount = len(domains)
+				}
+			}
 		}
 		return toolResultMsg{
 			phase:   "subfinder",
@@ -484,11 +490,17 @@ func (m model) runNaabuPhase(target string) tea.Cmd {
 	}
 
 	return func() tea.Msg {
-		result, err := m.toolManager.RunTool(m.scanCtx, "naabu", target, nil)
+		result, err := m.toolManager.RunTool(m.scanCtx, "naabu", map[string]interface{}{"target": target})
 		resultCount := 0
 		success := err == nil
 		if result != nil {
-			resultCount = len(result.Ports)
+			if naabuResult, ok := result.(map[string]interface{}); ok {
+				if ports, ok := naabuResult["Ports"].([]int); ok {
+					resultCount = len(ports)
+				} else if ports, ok := naabuResult["ports"].([]int); ok {
+					resultCount = len(ports)
+				}
+			}
 		}
 		return toolResultMsg{
 			phase:   "naabu",
@@ -508,11 +520,17 @@ func (m model) runHTTPXPhase(target string) tea.Cmd {
 	}
 
 	return func() tea.Msg {
-		result, err := m.toolManager.RunTool(m.scanCtx, "httpx", target, nil)
+		result, err := m.toolManager.RunTool(m.scanCtx, "httpx", map[string]interface{}{"target": target})
 		resultCount := 0
 		success := err == nil
 		if result != nil {
-			resultCount = len(result.Services)
+			if httpxResult, ok := result.(map[string]interface{}); ok {
+				if services, ok := httpxResult["Services"].([]string); ok {
+					resultCount = len(services)
+				} else if services, ok := httpxResult["services"].([]string); ok {
+					resultCount = len(services)
+				}
+			}
 		}
 		return toolResultMsg{
 			phase:   "httpx",
@@ -532,11 +550,17 @@ func (m model) runNucleiPhase(target string) tea.Cmd {
 	}
 
 	return func() tea.Msg {
-		result, err := m.toolManager.RunTool(m.scanCtx, "nuclei", target, nil)
+		result, err := m.toolManager.RunTool(m.scanCtx, "nuclei", map[string]interface{}{"target": target})
 		resultCount := 0
 		success := err == nil
 		if result != nil {
-			resultCount = len(result.Vulns)
+			if nucleiResult, ok := result.(map[string]interface{}); ok {
+				if vulns, ok := nucleiResult["Vulns"].([]string); ok {
+					resultCount = len(vulns)
+				} else if vulns, ok := nucleiResult["vulns"].([]string); ok {
+					resultCount = len(vulns)
+				}
+			}
 		}
 		return toolResultMsg{
 			phase:   "nuclei",
